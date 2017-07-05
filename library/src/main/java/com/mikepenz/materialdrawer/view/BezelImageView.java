@@ -68,7 +68,6 @@ public class BezelImageView extends ImageView {
 
     private ColorMatrixColorFilter mDesaturateColorFilter;
 
-    private int mSelectorAlpha = 150;
     private int mSelectorColor;
     private ColorFilter mSelectorFilter;
 
@@ -122,7 +121,7 @@ public class BezelImageView extends ImageView {
 
         //create a selectorFilter if we already have a color
         if (mSelectorColor != 0) {
-            this.mSelectorFilter = new PorterDuffColorFilter(Color.argb(mSelectorAlpha, Color.red(mSelectorColor), Color.green(mSelectorColor), Color.blue(mSelectorColor)), PorterDuff.Mode.SRC_ATOP);
+            this.mSelectorFilter = new PorterDuffColorFilter(Color.argb(Color.alpha(mSelectorColor), Color.red(mSelectorColor), Color.green(mSelectorColor), Color.blue(mSelectorColor)), PorterDuff.Mode.SRC_ATOP);
         }
     }
 
@@ -299,7 +298,7 @@ public class BezelImageView extends ImageView {
      */
     public void setSelectorColor(int selectorColor) {
         this.mSelectorColor = selectorColor;
-        this.mSelectorFilter = new PorterDuffColorFilter(Color.argb(mSelectorAlpha, Color.red(mSelectorColor), Color.green(mSelectorColor), Color.blue(mSelectorColor)), PorterDuff.Mode.SRC_ATOP);
+        this.mSelectorFilter = new PorterDuffColorFilter(Color.argb(Color.alpha(mSelectorColor), Color.red(mSelectorColor), Color.green(mSelectorColor), Color.blue(mSelectorColor)), PorterDuff.Mode.SRC_ATOP);
         this.invalidate();
     }
 
