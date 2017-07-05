@@ -1196,7 +1196,8 @@ public class AccountHeaderBuilder {
         //cancel previous started image loading processes
         DrawerImageLoader.getInstance().cancelImage(iv);
         //set the placeholder
-        iv.setImageDrawable(DrawerImageLoader.getInstance().getImageLoader().placeholder(iv.getContext(), DrawerImageLoader.Tags.PROFILE.name()));
+        // TODO: 7/5/17 Add placeholder config
+        //iv.setImageDrawable(DrawerImageLoader.getInstance().getImageLoader().placeholder(iv.getContext(), DrawerImageLoader.Tags.PROFILE.name()));
         //set the real image (probably also the uri)
         ImageHolder.applyTo(imageHolder, iv, DrawerImageLoader.Tags.PROFILE.name());
     }
