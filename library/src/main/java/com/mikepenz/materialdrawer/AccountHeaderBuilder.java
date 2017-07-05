@@ -926,7 +926,7 @@ public class AccountHeaderBuilder {
             if (p.isSelectable()) {
                 boolean used = false;
                 for (int j = 0; j < 4; j++) {
-                    if (previousActiveProfiles[j] == p) {
+                    if (previousActiveProfiles[j] != null && previousActiveProfiles[j].equals(p)) {
                         newActiveProfiles[j] = p;
                         used = true;
                         break;
