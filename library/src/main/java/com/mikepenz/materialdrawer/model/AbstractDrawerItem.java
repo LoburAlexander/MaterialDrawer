@@ -1,14 +1,12 @@
 package com.mikepenz.materialdrawer.model;
 
 import android.content.Context;
-import android.support.annotation.CallSuper;
-import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.mikepenz.fastadapter.utils.IdDistributor;
 import com.mikepenz.materialdrawer.Drawer;
+import com.mikepenz.materialdrawer.R;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.OnPostBindViewListener;
 import com.mikepenz.materialdrawer.model.interfaces.Selectable;
@@ -17,6 +15,9 @@ import com.mikepenz.materialdrawer.model.interfaces.Tagable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import androidx.annotation.CallSuper;
+import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * Created by mikepenz on 14.07.15.
@@ -234,17 +235,22 @@ public abstract class AbstractDrawerItem<T, VH extends RecyclerView.ViewHolder> 
 
     /**
      * a list of subItems
+     * **WARNING** Make sure the subItems provided already have identifiers
      *
      * @param subItems
      * @return
      */
     public T withSubItems(List<IDrawerItem> subItems) {
-        this.mSubItems = IdDistributor.checkIds(subItems);
+        this.mSubItems = subItems;
+        for (IDrawerItem subItem : subItems) {
+            subItem.withParent(this);
+        }
         return (T) this;
     }
 
     /**
      * an array of subItems
+     * **WARNING** Make sure the subItems provided already have identifiers
      *
      * @param subItems
      * @return
@@ -253,7 +259,10 @@ public abstract class AbstractDrawerItem<T, VH extends RecyclerView.ViewHolder> 
         if (mSubItems == null) {
             mSubItems = new ArrayList<>();
         }
-        Collections.addAll(mSubItems, IdDistributor.checkIds(subItems));
+        for (IDrawerItem subItem : subItems) {
+            subItem.withParent(this);
+        }
+        Collections.addAll(mSubItems, subItems);
         return (T) this;
     }
 
@@ -327,7 +336,7 @@ public abstract class AbstractDrawerItem<T, VH extends RecyclerView.ViewHolder> 
     @CallSuper
     @Override
     public void bindView(VH holder, List<Object> payloads) {
-        holder.itemView.setTag(this);
+        holder.itemView.setTag(R.id.material_drawer_item, this);
     }
 
     /**
@@ -337,7 +346,7 @@ public abstract class AbstractDrawerItem<T, VH extends RecyclerView.ViewHolder> 
      */
     @Override
     public void unbindView(VH holder) {
-
+        holder.itemView.clearAnimation();
     }
 
     /**

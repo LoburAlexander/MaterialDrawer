@@ -5,25 +5,26 @@
 > Does your application **contain a Drawer**? Do you want to have it **up and running in less than 5 minutes**? Do you want your drawer to follow the **Android Design Guidelines**?
 Do you have **profiles**? Do you need **flexibility**? Is Google's navigation Drawer of the **design support** not enough for you? Do you want a **simple and easy** to understand api?
 
-If any (or all) of these questions seem familiar, the **MaterialDrawer** is the perfect library for you.
+If any (or all) of these questions seem familiar, the **MaterialDrawer** is the perfect library for you all.
 
 **Never** waste your time again.
 It provides you with the easiest possible implementation of a navigation drawer for your application.
 There  is a Header with profiles (**AccountHeader**), a **MiniDrawer** for Tablets (like Gmail), provide
 **custom DrawerItems**, **custom colors**, **custom themes**, ... **No limits** for customizations.
 
-### A quick overview what's in
+### A quick overview of what's in it 
 - **the easiest possible integration**
 - integrate in less than **5 minutes**
+- depends on androidX
 - compatible down to **API Level 14**
 - includes an **AccountSwitcher**
 - quick and simple api
-- follows the **Google Material Design Guidelines**
+- follows the **NEW Google Material Design Guidelines**
 - use **vector** (.svg) icons and **icon fonts** via the [Android-Iconics](https://github.com/mikepenz/Android-Iconics) integration
  - **Google Material Design Icons**, Google **Material Community** Design Icons, FontAwesome and more
 - comes with various **themes** which help to get your own themes clean
 - modify the colors on the go
-- **uses the AppCompat support library**
+- **uses the androidX support libraries**
 - comes with multiple default drawer items
 - based on a **RecyclerView**
 - **RTL** support
@@ -35,15 +36,15 @@ There  is a Header with profiles (**AccountHeader**), a **MiniDrawer** for Table
 - sticky footer or headers
 - **absolutely NO limits**
 
-> If you upgrade from < 5.9.0 follow the [MIGRATION GUIDE](https://github.com/mikepenz/MaterialDrawer/blob/develop/MIGRATION.md)
+> If you upgrade from < 6.1.0 follow the [MIGRATION GUIDE](https://github.com/mikepenz/MaterialDrawer/blob/develop/MIGRATION.md)
 
 # Preview
 ## Demo
-You can try it out here [Google Play](https://play.google.com/store/apps/details?id=com.mikepenz.unsplash) (wall:splash an open source application which uses this drawer implementation). Or you try the [Sample Application](https://play.google.com/store/apps/details?id=com.mikepenz.materialdrawer.app)
+You can try it out here [Sample Application](https://play.google.com/store/apps/details?id=com.mikepenz.materialdrawer.app)
 
 ## Screenshots
-![Image](https://raw.githubusercontent.com/mikepenz/MaterialDrawer/develop/DEV/github/screenshots1.jpg)
-![Image](https://raw.githubusercontent.com/mikepenz/MaterialDrawer/develop/DEV/github/screenshots2.jpg)
+![Image](DEV/github/screenshots1.png)
+![Image](DEV/github/screenshots2.png)
 
 # WIKI / FAQ
 You can find some frequently asked questions and other resources in the [WIKI / FAQ](FAQ.md) site.
@@ -52,10 +53,17 @@ You can find some frequently asked questions and other resources in the [WIKI / 
 ## 1. Provide the gradle dependency
 
 ```gradle
-compile('com.mikepenz:materialdrawer:5.9.4@aar') {
-	transitive = true
-}
+implementation "com.mikepenz:materialdrawer:6.1.1"
+
+//required support lib modules
+implementation "androidx.appcompat:appcompat:${versions.androidX}"
+implementation "androidx.recyclerview:recyclerview:${versions.androidX}"
+implementation "androidx.annotation:annotation:${versions.androidX}"
+implementation "com.google.android.material:material:${versions.androidX}"
+implementation "androidx.constraintlayout:constraintlayout:${versions.constraintLayout}"
 ```
+
+To use appcompat please use a version smaller than 6.1.0. (See the releases on GitHub)
 
 ## 2. Add your drawer
 ```java
@@ -304,9 +312,12 @@ Create your custom style and use one of the provided themes as parent. If you do
         <item name="material_drawer_secondary_text">@color/material_drawer_secondary_text</item>
         <item name="material_drawer_hint_text">@color/material_drawer_hint_text</item>
         <item name="material_drawer_divider">@color/material_drawer_divider</item>
-        <item name="material_drawer_selected">@color/material_drawer_selected</item>
+        <item name="material_drawer_selected">@color/material_drawer_selected</item> <!-- Material 2 defines 12% alpha, primary color -->
+        <item name="material_drawer_selected_legacy">@color/material_drawer_selected</item> <!-- Defines the color if legacy style (Material 1, is enabled) -->
         <item name="material_drawer_selected_text">@color/material_drawer_selected_text</item>
         <item name="material_drawer_header_selection_text">@color/material_drawer_header_selection_text</item>
+	<item name="material_drawer_header_selection_subtext">@color/material_drawer_dark_header_selection_subtext</item>
+        <item name="material_drawer_legacy_style">false</item> <!-- Enables legacy Material 1 style -->
     </style>
 ```
 
@@ -329,9 +340,11 @@ No need to create a custom theme. Just set these colors (or some of them) and yo
     <color name="material_drawer_hint_text">#42000000</color>
     <color name="material_drawer_divider">#1F000000</color>
     <!-- Material DEFAULT drawer colors -->
-    <color name="material_drawer_selected">#E8E8E8</color>
+    <color name="material_drawer_selected">#1F2196F3</color>
+    <color name="material_drawer_selected_legacy">#E8E8E8</color>
     <color name="material_drawer_selected_text">#2196F3</color>
-    <color name="material_drawer_header_selection_text">#FFF</color>
+    <color name="material_drawer_header_selection_text">#DE000000</color>
+    <color name="material_drawer_header_selection_subtext">#8A000000</color>
 
     <!-- OVERWRITE THESE COLORS FOR A DARK THEME -->
     <!-- MaterialDrawer DEFAULT DARK colors -->
@@ -343,9 +356,11 @@ No need to create a custom theme. Just set these colors (or some of them) and yo
     <color name="material_drawer_dark_hint_text">#42FFFFFF</color>
     <color name="material_drawer_dark_divider">#1FFFFFFF</color>
     <!-- MaterialDrawer DEFAULT DARK drawer colors -->
-    <color name="material_drawer_dark_selected">#202020</color>
+    <color name="material_drawer_dark_selected">#1F2196F3</color>
+    <color name="material_drawer_dark_selected_legacy">#202020</color>
     <color name="material_drawer_dark_selected_text">@color/material_drawer_primary</color>
-    <color name="material_drawer_dark_header_selection_text">#FFF</color>
+    <color name="material_drawer_dark_header_selection_text">#FFFFFFFF</color>
+    <color name="material_drawer_dark_header_selection_subtext">#B3FFFFFF</color>
 ```
 
 # FAQ
@@ -391,7 +406,7 @@ You'll then be able to use this custom class:
 builder.withDrawerLayout(R.layout.material_drawer);
 ```
 
-### But I prefer Kotlin
+### Prefer Kotlin?
 Thanks to @zsmb13 there's now an (in)official Kotlin DSL wrapper for the MaterialDrawer https://github.com/zsmb13/MaterialDrawerKt
 
 # Apps using the MaterialDrawer
@@ -436,9 +451,15 @@ Thanks to @zsmb13 there's now an (in)official Kotlin DSL wrapper for the Materia
 * [Calendula](https://github.com/citiususc/calendula)
 * [MyTimes](https://github.com/debo1994/MyTimes)
 * [VoIP By Antisip](https://play.google.com/store/apps/details?id=com.antisip.vbyantisip)
+* [MBox - One Place for Entertainment](https://play.google.com/store/apps/details?id=com.paperwrrk.android.mbox)
+* [D Notes - Smart and Material Note Taking](https://play.google.com/store/apps/details?id=com.dvdb.bergnotes)
+* [Moviebase](https://play.google.com/store/apps/details?id=com.moviebase)
+* [MyFuelLog2](https://play.google.com/store/apps/details?id=com.acty.myfuellog2)
+* [MECSol](https://play.google.com/store/apps/details?id=tk.rlta.mecsol)
 
 # Articles about the MaterialDrawer
-* [java-help.ru](http://java-help.ru/material-navigationdrawer/)
+* [java-help.ru - MaterialDrawer tutorial](http://java-help.ru/material-navigationdrawer/)
+* [MaterialDrawer in multiple activities](https://android.jlelse.eu/android-using-navigation-drawer-across-multiple-activities-the-easiest-way-b011f152aebd)
 
 
 # Credits
@@ -457,7 +478,7 @@ Thanks to @zsmb13 there's now an (in)official Kotlin DSL wrapper for the Materia
 
 # License
 
-    Copyright 2016 Mike Penz
+    Copyright 2018 Mike Penz
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.

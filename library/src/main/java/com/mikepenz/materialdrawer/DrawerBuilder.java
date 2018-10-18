@@ -8,25 +8,25 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.annotation.ColorInt;
-import android.support.annotation.ColorRes;
-import android.support.annotation.DimenRes;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.IdRes;
-import android.support.annotation.LayoutRes;
-import android.support.annotation.MenuRes;
-import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.view.ViewCompat;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.view.SupportMenuInflater;
-import android.support.v7.view.menu.MenuBuilder;
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
+import androidx.annotation.ColorInt;
+import androidx.annotation.ColorRes;
+import androidx.annotation.DimenRes;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.IdRes;
+import androidx.annotation.LayoutRes;
+import androidx.annotation.MenuRes;
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.GravityCompat;
+import androidx.core.view.ViewCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.view.SupportMenuInflater;
+import androidx.appcompat.view.menu.MenuBuilder;
+import androidx.recyclerview.widget.DefaultItemAnimator;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.appcompat.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -38,11 +38,16 @@ import android.widget.LinearLayout;
 
 import com.mikepenz.fastadapter.FastAdapter;
 import com.mikepenz.fastadapter.IAdapter;
+import com.mikepenz.fastadapter.IAdapterExtension;
 import com.mikepenz.fastadapter.IExpandable;
 import com.mikepenz.fastadapter.IItemAdapter;
-import com.mikepenz.fastadapter.adapters.FooterAdapter;
-import com.mikepenz.fastadapter.adapters.HeaderAdapter;
 import com.mikepenz.fastadapter.adapters.ItemAdapter;
+import com.mikepenz.fastadapter.adapters.ModelAdapter;
+import com.mikepenz.fastadapter.expandable.ExpandableExtension;
+import com.mikepenz.fastadapter.listeners.OnClickListener;
+import com.mikepenz.fastadapter.listeners.OnLongClickListener;
+import com.mikepenz.fastadapter.utils.DefaultIdDistributor;
+import com.mikepenz.fastadapter.utils.DefaultIdDistributorImpl;
 import com.mikepenz.iconics.utils.Utils;
 import com.mikepenz.materialdrawer.holder.DimenHolder;
 import com.mikepenz.materialdrawer.model.AbstractDrawerItem;
@@ -58,6 +63,7 @@ import com.mikepenz.materialize.util.UIUtils;
 import com.mikepenz.materialize.view.ScrimInsetsRelativeLayout;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -77,6 +83,7 @@ public class DrawerBuilder {
     protected RecyclerView.LayoutManager mLayoutManager;
     protected ViewGroup mRootView;
     protected Materialize mMaterialize;
+    public final DefaultIdDistributor idDistributor = new DefaultIdDistributorImpl();
 
     /**
      * default constructor
@@ -864,26 +871,11 @@ public class DrawerBuilder {
     }
 
     // an adapter to use for the list
-    protected boolean mPositionBasedStateManagement = true;
     protected FastAdapter<IDrawerItem> mAdapter;
-    protected HeaderAdapter<IDrawerItem> mHeaderAdapter = new HeaderAdapter<>();
-    protected ItemAdapter<IDrawerItem> mItemAdapter = new ItemAdapter<>();
-    protected FooterAdapter<IDrawerItem> mFooterAdapter = new FooterAdapter<>();
-
-    /**
-     * This allows to disable the default position based statemanagment of the FastAdapter and switch to the
-     * new identifier based state managment
-     *
-     * @param positionBasedStateManagement enable / disable the positionBasedStateManagement
-     * @return this
-     */
-    public DrawerBuilder withPositionBasedStateManagement(boolean positionBasedStateManagement) {
-        this.mPositionBasedStateManagement = positionBasedStateManagement;
-        if(mAdapter != null) {
-            this.mAdapter.withPositionBasedStateManagement(this.mPositionBasedStateManagement);
-        }
-        return this;
-    }
+    protected ModelAdapter<IDrawerItem, IDrawerItem> mHeaderAdapter = new ItemAdapter<>().withIdDistributor(idDistributor);
+    protected ModelAdapter<IDrawerItem, IDrawerItem> mItemAdapter = new ItemAdapter<>().withIdDistributor(idDistributor);
+    protected ModelAdapter<IDrawerItem, IDrawerItem> mFooterAdapter = new ItemAdapter<>().withIdDistributor(idDistributor);
+    protected ExpandableExtension<IDrawerItem> mExpandableExtension = new ExpandableExtension<>();
 
     /**
      * Define a custom Adapter which will be used in the drawer
@@ -896,7 +888,10 @@ public class DrawerBuilder {
     public DrawerBuilder withAdapter(@NonNull FastAdapter<IDrawerItem> adapter) {
         this.mAdapter = adapter;
         //we have to rewrap as a different FastAdapter was provided
-        mHeaderAdapter.wrap(mItemAdapter.wrap(mFooterAdapter.wrap(mAdapter)));
+        adapter.addAdapter(0, mHeaderAdapter);
+        adapter.addAdapter(1, mItemAdapter);
+        adapter.addAdapter(2, mFooterAdapter);
+        adapter.addExtension(mExpandableExtension);
         return this;
     }
 
@@ -907,27 +902,24 @@ public class DrawerBuilder {
      */
     protected FastAdapter<IDrawerItem> getAdapter() {
         if (mAdapter == null) {
-            mAdapter = new FastAdapter<>();
+            mAdapter = FastAdapter.with(Arrays.asList(mHeaderAdapter, mItemAdapter, mFooterAdapter), Arrays.<IAdapterExtension<IDrawerItem>>asList(mExpandableExtension));
             mAdapter.withSelectable(true);
+            mAdapter.withMultiSelect(false);
             mAdapter.withAllowDeselection(false);
             mAdapter.setHasStableIds(mHasStableIds);
-            mAdapter.withPositionBasedStateManagement(mPositionBasedStateManagement);
-
-            //we wrap our main Adapter with the item hosting adapter
-            mHeaderAdapter.wrap(mItemAdapter.wrap(mFooterAdapter.wrap(mAdapter)));
         }
         return mAdapter;
     }
 
-    protected IItemAdapter<IDrawerItem> getItemAdapter() {
+    protected IItemAdapter<IDrawerItem, IDrawerItem> getItemAdapter() {
         return mItemAdapter;
     }
 
-    protected IItemAdapter<IDrawerItem> getHeaderAdapter() {
+    protected IItemAdapter<IDrawerItem, IDrawerItem> getHeaderAdapter() {
         return mHeaderAdapter;
     }
 
-    protected IItemAdapter<IDrawerItem> getFooterAdapter() {
+    protected IItemAdapter<IDrawerItem, IDrawerItem> getFooterAdapter() {
         return mFooterAdapter;
     }
 
@@ -1253,52 +1245,68 @@ public class DrawerBuilder {
         return this;
     }
 
+    // shared preferences to use for integrated functions
+    protected SharedPreferences mSharedPreferences;
+
+    /**
+     * Set the {@link SharedPreferences} to use for the `showDrawerOnFirstLaunch` or the `ShowDrawerUntilDraggedOpened`
+     *
+     * @param sharedPreferences SharedPreference to use
+     * @return this
+     */
+    public DrawerBuilder withSharedPreferences(SharedPreferences sharedPreferences) {
+        this.mSharedPreferences = sharedPreferences;
+        return this;
+    }
+
     /**
      * helper method to handle when the drawer should be shown on launch
      */
     private void handleShowOnLaunch() {
         //check if it should be shown on launch (and we have a drawerLayout)
         if (mActivity != null && mDrawerLayout != null) {
-            final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(mActivity);
+            if (mShowDrawerOnFirstLaunch || mShowDrawerUntilDraggedOpened) {
+                final SharedPreferences preferences = mSharedPreferences != null ? mSharedPreferences : PreferenceManager.getDefaultSharedPreferences(mActivity);
 
-            if(mShowDrawerOnFirstLaunch && !preferences.getBoolean(Drawer.PREF_USER_LEARNED_DRAWER, false)){
-                //if it was not shown yet
-                //open the drawer
-                mDrawerLayout.openDrawer(mSliderLayout);
+                if (mShowDrawerOnFirstLaunch && !preferences.getBoolean(Drawer.PREF_USER_LEARNED_DRAWER, false)) {
+                    //if it was not shown yet
+                    //open the drawer
+                    mDrawerLayout.openDrawer(mSliderLayout);
 
-                //save that it showed up once ;)
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putBoolean(Drawer.PREF_USER_LEARNED_DRAWER, true);
-                editor.apply();
+                    //save that it showed up once ;)
+                    SharedPreferences.Editor editor = preferences.edit();
+                    editor.putBoolean(Drawer.PREF_USER_LEARNED_DRAWER, true);
+                    editor.apply();
 
-            } else if(mShowDrawerUntilDraggedOpened && !preferences.getBoolean(Drawer.PREF_USER_OPENED_DRAWER_BY_DRAGGING, false)) {
-                // open the drawer since the user has not dragged it open yet
-                mDrawerLayout.openDrawer(mSliderLayout);
+                } else if (mShowDrawerUntilDraggedOpened && !preferences.getBoolean(Drawer.PREF_USER_OPENED_DRAWER_BY_DRAGGING, false)) {
+                    // open the drawer since the user has not dragged it open yet
+                    mDrawerLayout.openDrawer(mSliderLayout);
 
-                // add a listener to detect dragging
-                mDrawerLayout.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
-                    boolean hasBeenDragged = false;
+                    // add a listener to detect dragging
+                    mDrawerLayout.addDrawerListener(new DrawerLayout.SimpleDrawerListener() {
+                        boolean hasBeenDragged = false;
 
-                    @Override
-                    public void onDrawerStateChanged(int newState) {
-                        if(newState == DrawerLayout.STATE_DRAGGING){
-                            // save that the user was dragging
-                            hasBeenDragged = true;
+                        @Override
+                        public void onDrawerStateChanged(int newState) {
+                            if (newState == DrawerLayout.STATE_DRAGGING) {
+                                // save that the user was dragging
+                                hasBeenDragged = true;
 
-                        } else if(newState == DrawerLayout.STATE_IDLE){
-                            // check if the user was dragging and if that resulted in an open drawer
-                            if(hasBeenDragged && mDrawerLayout.isDrawerOpen(mDrawerGravity)){
-                                // Save that the user has dragged it open
-                                SharedPreferences.Editor editor = preferences.edit();
-                                editor.putBoolean(Drawer.PREF_USER_OPENED_DRAWER_BY_DRAGGING, true);
-                                editor.apply();
-                            } else {
-                                // reset the drag boolean
-                                hasBeenDragged = false;
+                            } else if (newState == DrawerLayout.STATE_IDLE) {
+                                // check if the user was dragging and if that resulted in an open drawer
+                                if (hasBeenDragged && mDrawerLayout.isDrawerOpen(mDrawerGravity)) {
+                                    // Save that the user has dragged it open
+                                    SharedPreferences.Editor editor = preferences.edit();
+                                    editor.putBoolean(Drawer.PREF_USER_OPENED_DRAWER_BY_DRAGGING, true);
+                                    editor.apply();
+                                } else {
+                                    // reset the drag boolean
+                                    hasBeenDragged = false;
+                                }
                             }
                         }
-                    }
-                });
+                    });
+                }
             }
         }
     }
@@ -1562,7 +1570,7 @@ public class DrawerBuilder {
         //we only want to hook a Drawer to the MiniDrawer if it is the main drawer, not the appended one
         if (!mAppended && mGenerateMiniDrawer) {
             // if we should create a MiniDrawer we have to do this now
-            mMiniDrawer = new MiniDrawer().withDrawer(result).withAccountHeader(mAccountHeader).withPositionBasedStateManagement(mPositionBasedStateManagement);
+            mMiniDrawer = new MiniDrawer().withDrawer(result).withAccountHeader(mAccountHeader);
         }
 
         //forget the reference to the activity
@@ -1719,7 +1727,7 @@ public class DrawerBuilder {
         DrawerUtils.handleFooterView(this, new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                IDrawerItem drawerItem = (IDrawerItem) v.getTag();
+                IDrawerItem drawerItem = (IDrawerItem) v.getTag(R.id.material_drawer_item);
                 DrawerUtils.onFooterDrawerItemClick(DrawerBuilder.this, drawerItem, v, true);
             }
         });
@@ -1749,7 +1757,7 @@ public class DrawerBuilder {
         mAdapter.select(mSelectedItemPosition);
 
         // add the onDrawerItemClickListener if set
-        mAdapter.withOnClickListener(new FastAdapter.OnClickListener<IDrawerItem>() {
+        mAdapter.withOnClickListener(new OnClickListener<IDrawerItem>() {
             @Override
             public boolean onClick(final View view, IAdapter<IDrawerItem> adapter, final IDrawerItem item, final int position) {
                 if (!(item != null && item instanceof Selectable && !item.isSelectable())) {
@@ -1800,7 +1808,7 @@ public class DrawerBuilder {
             }
         });
         // add the onDrawerItemLongClickListener if set
-        mAdapter.withOnLongClickListener(new FastAdapter.OnLongClickListener<IDrawerItem>() {
+        mAdapter.withOnLongClickListener(new OnLongClickListener<IDrawerItem>() {
             @Override
             public boolean onLongClick(View view, IAdapter<IDrawerItem> adapter, final IDrawerItem item, final int position) {
                 if (mOnDrawerItemLongClickListener != null) {
@@ -1817,9 +1825,11 @@ public class DrawerBuilder {
         // try to restore all saved values again
         if (mSavedInstance != null) {
             if (!mAppended) {
+                mAdapter.deselect();
                 mAdapter.withSavedInstanceState(mSavedInstance, Drawer.BUNDLE_SELECTION);
                 DrawerUtils.setStickyFooterSelection(this, mSavedInstance.getInt(Drawer.BUNDLE_STICKY_FOOTER_SELECTION, -1), null);
             } else {
+                mAdapter.deselect();
                 mAdapter.withSavedInstanceState(mSavedInstance, Drawer.BUNDLE_SELECTION_APPENDED);
                 DrawerUtils.setStickyFooterSelection(this, mSavedInstance.getInt(Drawer.BUNDLE_STICKY_FOOTER_SELECTION_APPENDED, -1), null);
             }
