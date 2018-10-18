@@ -1,11 +1,41 @@
 ### Upgrade Notes
+
+#### v6.1.1
+* Further adjustments for the theme to properly meet the new material 2 design guidelines.
+```xml
+<item name="material_drawer_header_selection_subtext">@color/material_drawer_header_selection_subtext</item> <!-- Defines the color of the subtext item in the header -->
+```
+
+#### v6.1.0-rc01.2
+* With the introduction of the material 2 design behaviour, new theme attributes were added.
+```xml
+<item name="material_drawer_selected_legacy">@color/material_drawer_selected</item> <!-- Defines the color if legacy style (Material 1, is enabled) -->
+<item name="material_drawer_legacy_style">true</item> <!-- Enables legacy Material 1 style -->
+```
+* Reworked the header views to be a lot more simple by using a `ConstraintLayout`
+  * Any previously custom headers require to be adjusted to the new structure. (The statusbar `Guideline` is required, for example)
+* The viewHolder.item has no longer the item itself as tag directly. It is now defined with an id `R.id.material_drawer_item`. `ViewHolder.itemView.getTag(R.id.material_drawer_item)` will now return the `IDrawerItem`.
+
+#### v6.1.0-rc01
+* Final upgrade to the new shiny androidX dependencies :)
+
+#### v6.0.3
+**IMPORTANT IF YOU USE THE FASTADAPTER OR ABOUTLIBRARIES**
+* You have to update your FastAdapter dependency to v3.2.1 with this release
+* See the MIGRATION information of the FastAdapter https://github.com/mikepenz/FastAdapter/blob/develop/MIGRATION.md
+
+#### v6.0.0
+**IMPORTANT IF YOU USE THE FASTADAPTER OR ABOUTLIBRARIES**
+* You have to update your FastAdapter dependency to v3.0.0 with this release
+* See the MIGRATION information of the FastAdapter https://github.com/mikepenz/FastAdapter/blob/develop/MIGRATION.md
+
 #### v5.9.0 & v5.9.2
-**IMPORTANT IF YOU USE THE FASTADAPTER OR MATERIALDRAWER**
+**IMPORTANT IF YOU USE THE FASTADAPTER OR ABOUTLIBRARIES**
 * You have to update your FastAdapter dependency to v2.5.0 with this release
 * See the MIGRATION information of the FastAdapter https://github.com/mikepenz/FastAdapter/blob/develop/MIGRATION.md
 
 #### v5.8.0
-**IMPORTANT IF YOU USE THE FASTADAPTER OR MATERIALDRAWER**
+**IMPORTANT IF YOU USE THE FASTADAPTER OR ABOUTLIBRARIES**
 * You have to update your FastAdapter dependency to v2.1.0 with this release
 * See the MIGRATION information of the FastAdapter https://github.com/mikepenz/FastAdapter/blob/develop/MIGRATION.md
 

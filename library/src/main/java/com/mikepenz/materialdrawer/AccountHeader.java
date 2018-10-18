@@ -3,8 +3,8 @@ package com.mikepenz.materialdrawer;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.NonNull;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.NonNull;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -347,7 +347,7 @@ public class AccountHeader {
      */
     private int getPositionByIdentifier(long identifier) {
         int found = -1;
-        if (mAccountHeaderBuilder.mProfiles != null && identifier >= 0) {
+        if (mAccountHeaderBuilder.mProfiles != null && identifier != -1) {
             for (int i = 0; i < mAccountHeaderBuilder.mProfiles.size(); i++) {
                 if (mAccountHeaderBuilder.mProfiles.get(i) != null) {
                     if (mAccountHeaderBuilder.mProfiles.get(i).getIdentifier() == identifier) {

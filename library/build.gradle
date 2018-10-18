@@ -1,5 +1,4 @@
 apply plugin: 'com.android.library'
-apply plugin: 'com.novoda.bintray-release'
 
 android {
     compileSdkVersion setup.compileSdk
@@ -8,8 +7,10 @@ android {
     defaultConfig {
         minSdkVersion setup.minSdk
         targetSdkVersion setup.targetSdk
-        versionCode 594
-        versionName '5.9.4.1'
+        versionCode release.versionCode
+        versionName release.versionName
+
+        resValue "string", "materialdrawer_lib_version", "${versionName}"
     }
     buildTypes {
         release {
@@ -24,28 +25,31 @@ android {
     }
 }
 
-apply from: 'gradle-mvn-push.gradle'
-apply from: 'gradle-jcenter-push.gradle'
-
 dependencies {
-    compile "com.android.support:appcompat-v7:${versions.supportLib}"
-    compile "com.android.support:recyclerview-v7:${versions.supportLib}"
-    compile "com.android.support:support-annotations:${versions.supportLib}"
-    compile "com.android.support:design:${versions.supportLib}"
+    implementation "androidx.appcompat:appcompat:${versions.androidX}"
+    implementation "androidx.recyclerview:recyclerview:${versions.androidX}"
+    implementation "androidx.annotation:annotation:${versions.androidX}"
+    implementation "com.google.android.material:material:${versions.androidX}"
+
+    // add the constraintLayout used to create the items and headers
+    implementation "androidx.constraintlayout:constraintlayout:${versions.constraintLayout}"
 
     // used to base on some backwards compatible themes
     // contains util classes to support various android versions, and clean up code
     // comes with the awesome "Holder"-Pattern
     // https://github.com/mikepenz/Materialize
-    compile 'com.mikepenz:materialize:1.0.2@aar'
+    api 'com.mikepenz:materialize:1.2.0'
 
     // used to provide out of the box icon font support. simplifies development,
     // and provides scalable icons. the core is very very light
     // https://github.com/mikepenz/Android-Iconics
-    compile 'com.mikepenz:iconics-core:2.8.7@aar'
+    api 'com.mikepenz:iconics-core:3.1.0'
 
     // used to fill the RecyclerView with the DrawerItems
     // and provides single and multi selection, expandable items
     // https://github.com/mikepenz/FastAdapter
-    compile 'com.mikepenz:fastadapter:2.6.2@aar'
+    api 'com.mikepenz:fastadapter:3.3.0'
+    api 'com.mikepenz:fastadapter-extensions-expandable:3.3.0'
 }
+
+apply from: '../gradle-release.gradle'

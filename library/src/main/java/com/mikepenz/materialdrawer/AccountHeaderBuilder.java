@@ -7,22 +7,12 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.ColorInt;
-import android.support.annotation.ColorRes;
-import android.support.annotation.DimenRes;
-import android.support.annotation.DrawableRes;
-import android.support.annotation.LayoutRes;
-import android.support.annotation.NonNull;
-import android.support.v4.view.ViewCompat;
-import android.support.v7.content.res.AppCompatResources;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.mikepenz.fastadapter.utils.IdDistributor;
 import com.mikepenz.iconics.IconicsDrawable;
 import com.mikepenz.materialdrawer.holder.ColorHolder;
 import com.mikepenz.materialdrawer.holder.DimenHolder;
@@ -42,15 +32,25 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Stack;
 
+import androidx.annotation.ColorInt;
+import androidx.annotation.ColorRes;
+import androidx.annotation.DimenRes;
+import androidx.annotation.DrawableRes;
+import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
+import androidx.appcompat.content.res.AppCompatResources;
+import androidx.constraintlayout.widget.Guideline;
+import androidx.core.view.ViewCompat;
+
 /**
  * Created by mikepenz on 23.05.15.
  */
 public class AccountHeaderBuilder {
     // global references to views we need later
+    protected Guideline mStatusBarGuideline;
     protected View mAccountHeader;
     protected ImageView mAccountHeaderBackground;
     protected BezelImageView mCurrentProfileView;
-    protected View mAccountHeaderTextSection;
     protected ImageView mAccountSwitcherArrow;
     protected TextView mCurrentProfileName;
     protected TextView mCurrentProfileEmail;
@@ -612,7 +612,10 @@ public class AccountHeaderBuilder {
      * @return
      */
     public AccountHeaderBuilder withProfiles(@NonNull List<IProfile> profiles) {
-        this.mProfiles = IdDistributor.checkIds(profiles);
+        if (mDrawer != null) {
+            mDrawer.mDrawerBuilder.idDistributor.checkIds(profiles);
+        }
+        this.mProfiles = profiles;
         return this;
     }
 
@@ -626,8 +629,10 @@ public class AccountHeaderBuilder {
         if (this.mProfiles == null) {
             this.mProfiles = new ArrayList<>();
         }
-
-        Collections.addAll(this.mProfiles, IdDistributor.checkIds(profiles));
+        if (mDrawer != null) {
+            mDrawer.mDrawerBuilder.idDistributor.checkIds(profiles);
+        }
+        Collections.addAll(this.mProfiles, profiles);
 
         return this;
     }
@@ -704,9 +709,12 @@ public class AccountHeaderBuilder {
 
             View accountHeader = mAccountHeaderContainer.findViewById(R.id.material_drawer_account_header);
             if (accountHeader != null) {
+                // TODO why is this null?
                 params = accountHeader.getLayoutParams();
-                params.height = height;
-                accountHeader.setLayoutParams(params);
+                if(params != null) {
+                    params.height = height;
+                    accountHeader.setLayoutParams(params);
+                }
             }
 
             View accountHeaderBackground = mAccountHeaderContainer.findViewById(R.id.material_drawer_account_header_background);
@@ -725,23 +733,20 @@ public class AccountHeaderBuilder {
      */
     private void handleSelectionView(IProfile profile, boolean on) {
         if (on) {
-            if (Build.VERSION.SDK_INT >= 21) {
-                ((FrameLayout) mAccountHeaderContainer).setForeground(AppCompatResources.getDrawable(mAccountHeaderContainer.getContext(), mAccountHeaderTextSectionBackgroundResource));
-                mAccountHeaderContainer.setOnClickListener(onSelectionClickListener);
-                mAccountHeaderContainer.setTag(R.id.material_drawer_profile_header, profile);
+            if (Build.VERSION.SDK_INT >= 23) {
+                mAccountHeaderContainer.setForeground(AppCompatResources.getDrawable(mAccountHeaderContainer.getContext(), mAccountHeaderTextSectionBackgroundResource));
             } else {
-                mAccountHeaderTextSection.setBackgroundResource(mAccountHeaderTextSectionBackgroundResource);
-                mAccountHeaderTextSection.setOnClickListener(onSelectionClickListener);
-                mAccountHeaderTextSection.setTag(R.id.material_drawer_profile_header, profile);
+                // todo foreground thing?
             }
+            mAccountHeaderContainer.setOnClickListener(onSelectionClickListener);
+            mAccountHeaderContainer.setTag(R.id.material_drawer_profile_header, profile);
         } else {
-            if (Build.VERSION.SDK_INT >= 21) {
-                ((FrameLayout) mAccountHeaderContainer).setForeground(null);
-                mAccountHeaderContainer.setOnClickListener(null);
+            if (Build.VERSION.SDK_INT >= 23) {
+                mAccountHeaderContainer.setForeground(null);
             } else {
-                UIUtils.setBackground(mAccountHeaderTextSection, null);
-                mAccountHeaderTextSection.setOnClickListener(null);
+                // TODO foreground reset
             }
+            mAccountHeaderContainer.setOnClickListener(null);
         }
     }
 
@@ -758,6 +763,7 @@ public class AccountHeaderBuilder {
 
         // get the header view within the container
         mAccountHeader = mAccountHeaderContainer.findViewById(R.id.material_drawer_account_header);
+        mStatusBarGuideline = mAccountHeaderContainer.findViewById(R.id.material_drawer_statusbar_guideline);
 
         //the default min header height by default 148dp
         int defaultHeaderMinHeight = mActivity.getResources().getDimensionPixelSize(R.dimen.material_drawer_account_header_height);
@@ -790,7 +796,8 @@ public class AccountHeaderBuilder {
 
         // handle everything if we have a translucent status bar which only is possible on API >= 19
         if (mTranslucentStatusBar && Build.VERSION.SDK_INT >= 21) {
-            mAccountHeader.setPadding(mAccountHeader.getPaddingLeft(), mAccountHeader.getPaddingTop() + statusBarHeight, mAccountHeader.getPaddingRight(), mAccountHeader.getPaddingBottom());
+            mStatusBarGuideline.setGuidelineBegin(statusBarHeight);
+
             //in fact it makes no difference if we have a translucent statusBar or not. we want 9/16 just if we are not compact
             if (mCompactStyle) {
                 height = height + statusBarHeight;
@@ -804,7 +811,7 @@ public class AccountHeaderBuilder {
         setHeaderHeight(height);
 
         // get the background view
-        mAccountHeaderBackground = (ImageView) mAccountHeaderContainer.findViewById(R.id.material_drawer_account_header_background);
+        mAccountHeaderBackground = mAccountHeaderContainer.findViewById(R.id.material_drawer_account_header_background);
         // set the background
         ImageHolder.applyTo(mHeaderBackground, mAccountHeaderBackground, DrawerImageLoader.Tags.ACCOUNT_HEADER.name());
 
@@ -814,25 +821,19 @@ public class AccountHeaderBuilder {
 
         // get the text color to use for the text section
         int textColor = ColorHolder.color(mTextColor, mActivity, R.attr.material_drawer_header_selection_text, R.color.material_drawer_header_selection_text);
-
-        // set the background for the section
-        if (mCompactStyle) {
-            mAccountHeaderTextSection = mAccountHeader;
-        } else {
-            mAccountHeaderTextSection = mAccountHeaderContainer.findViewById(R.id.material_drawer_account_header_text_section);
-        }
+        int subTextColor = ColorHolder.color(mTextColor, mActivity, R.attr.material_drawer_header_selection_subtext, R.color.material_drawer_header_selection_subtext);
 
         mAccountHeaderTextSectionBackgroundResource = UIUtils.getSelectableBackgroundRes(mActivity);
         handleSelectionView(mCurrentProfile, true);
 
         // set the arrow :D
-        mAccountSwitcherArrow = (ImageView) mAccountHeaderContainer.findViewById(R.id.material_drawer_account_header_text_switcher);
-        mAccountSwitcherArrow.setImageDrawable(new IconicsDrawable(mActivity, MaterialDrawerFont.Icon.mdf_arrow_drop_down).sizeRes(R.dimen.material_drawer_account_header_dropdown).paddingRes(R.dimen.material_drawer_account_header_dropdown_padding).color(textColor));
+        mAccountSwitcherArrow = mAccountHeaderContainer.findViewById(R.id.material_drawer_account_header_text_switcher);
+        mAccountSwitcherArrow.setImageDrawable(new IconicsDrawable(mActivity, MaterialDrawerFont.Icon.mdf_arrow_drop_down).sizeRes(R.dimen.material_drawer_account_header_dropdown).paddingRes(R.dimen.material_drawer_account_header_dropdown_padding).color(subTextColor));
 
         //get the fields for the name
-        mCurrentProfileView = (BezelImageView) mAccountHeader.findViewById(R.id.material_drawer_account_header_current);
-        mCurrentProfileName = (TextView) mAccountHeader.findViewById(R.id.material_drawer_account_header_name);
-        mCurrentProfileEmail = (TextView) mAccountHeader.findViewById(R.id.material_drawer_account_header_email);
+        mCurrentProfileView = mAccountHeader.findViewById(R.id.material_drawer_account_header_current);
+        mCurrentProfileName = mAccountHeader.findViewById(R.id.material_drawer_account_header_name);
+        mCurrentProfileEmail = mAccountHeader.findViewById(R.id.material_drawer_account_header_email);
 
         //set the typeface for the AccountHeader
         if (mNameTypeface != null) {
@@ -848,11 +849,11 @@ public class AccountHeaderBuilder {
         }
 
         mCurrentProfileName.setTextColor(textColor);
-        mCurrentProfileEmail.setTextColor(textColor);
+        mCurrentProfileEmail.setTextColor(subTextColor);
 
-        mProfileFirstView = (BezelImageView) mAccountHeader.findViewById(R.id.material_drawer_account_header_small_first);
-        mProfileSecondView = (BezelImageView) mAccountHeader.findViewById(R.id.material_drawer_account_header_small_second);
-        mProfileThirdView = (BezelImageView) mAccountHeader.findViewById(R.id.material_drawer_account_header_small_third);
+        mProfileFirstView = mAccountHeader.findViewById(R.id.material_drawer_account_header_small_first);
+        mProfileSecondView = mAccountHeader.findViewById(R.id.material_drawer_account_header_small_second);
+        mProfileThirdView = mAccountHeader.findViewById(R.id.material_drawer_account_header_small_third);
 
         //calculate the profiles to set
         calculateProfiles();
@@ -892,7 +893,8 @@ public class AccountHeaderBuilder {
 
         if (mCurrentProfile == null) {
             int setCount = 0;
-            for (int i = 0; i < mProfiles.size(); i++) {
+            int size = mProfiles.size();
+            for (int i = 0; i < size; i++) {
                 if (mProfiles.size() > i && mProfiles.get(i).isSelectable()) {
                     if (setCount == 0 && (mCurrentProfile == null)) {
                         mCurrentProfile = mProfiles.get(i);
@@ -1059,8 +1061,7 @@ public class AccountHeaderBuilder {
      * helper method to build the views for the ui
      */
     protected void buildProfiles() {
-        mCurrentProfileView.setVisibility(View.INVISIBLE);
-        mAccountHeaderTextSection.setVisibility(View.INVISIBLE);
+        mCurrentProfileView.setVisibility(View.GONE);
         mAccountSwitcherArrow.setVisibility(View.GONE);
         mProfileFirstView.setVisibility(View.GONE);
         mProfileFirstView.setOnClickListener(null);
@@ -1070,11 +1071,6 @@ public class AccountHeaderBuilder {
         mProfileThirdView.setOnClickListener(null);
         mCurrentProfileName.setText("");
         mCurrentProfileEmail.setText("");
-
-        //we only handle the padding if we are not in compact mode
-        if (!mCompactStyle) {
-            mAccountHeaderTextSection.setPadding(0, 0, (int) UIUtils.convertDpToPixel(56, mAccountHeaderTextSection.getContext()), 0);
-        }
 
         handleSelectionView(mCurrentProfile, true);
 
@@ -1095,7 +1091,6 @@ public class AccountHeaderBuilder {
                 mCurrentProfileView.setVisibility(View.GONE);
             }
 
-            mAccountHeaderTextSection.setVisibility(View.VISIBLE);
             handleSelectionView(mCurrentProfile, true);
             mAccountSwitcherArrow.setVisibility(View.VISIBLE);
             mCurrentProfileView.setTag(R.id.material_drawer_profile_header, mCurrentProfile);
@@ -1144,8 +1139,7 @@ public class AccountHeaderBuilder {
             }
         } else if (mProfiles != null && mProfiles.size() > 0) {
             IProfile profile = mProfiles.get(0);
-            mAccountHeaderTextSection.setTag(R.id.material_drawer_profile_header, profile);
-            mAccountHeaderTextSection.setVisibility(View.VISIBLE);
+            mAccountHeader.setTag(R.id.material_drawer_profile_header, profile);
             handleSelectionView(mCurrentProfile, true);
             mAccountSwitcherArrow.setVisibility(View.VISIBLE);
             if (mCurrentProfile != null) {
@@ -1159,25 +1153,18 @@ public class AccountHeaderBuilder {
         }
         if (!TextUtils.isEmpty(mSelectionFirstLine)) {
             mCurrentProfileName.setText(mSelectionFirstLine);
-            mAccountHeaderTextSection.setVisibility(View.VISIBLE);
         }
         if (!mSelectionSecondLineShown) {
             mCurrentProfileEmail.setVisibility(View.GONE);
         }
         if (!TextUtils.isEmpty(mSelectionSecondLine)) {
             mCurrentProfileEmail.setText(mSelectionSecondLine);
-            mAccountHeaderTextSection.setVisibility(View.VISIBLE);
         }
 
         //if we disabled the list
         if (!mSelectionListEnabled || !mSelectionListEnabledForSingleProfile && mProfileFirst == null && (mProfiles == null || mProfiles.size() == 1)) {
             mAccountSwitcherArrow.setVisibility(View.GONE);
             handleSelectionView(null, false);
-
-            //if we are not in compact mode minimize the padding to make use of the space
-            if (!mCompactStyle) {
-                mAccountHeaderTextSection.setPadding(0, 0, (int) UIUtils.convertDpToPixel(16, mAccountHeaderTextSection.getContext()), 0);
-            }
         }
 
         //if we disabled the list but still have set a custom listener
